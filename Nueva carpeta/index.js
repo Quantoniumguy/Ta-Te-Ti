@@ -1,109 +1,110 @@
-// ==================== CONSTANTS ==================== //
-const STATUS_DISPLAY = document.querySelector('.game-notification'),
-  GAME_STATE = ["", "", "", "", "", "", "", "", ""],
-  WINNINGS = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ],
-  WIN_MESSAGE = () => `El jugador ${currentPlayer} ha ganado!`,
-  DRAW_MESSAGE = () => `El juego ha terminado en empate!`,
-  CURRENT_PLAYER_TURN = () => `Turno del jugador ${currentPlayer}`
+const DISPLAY_ESTADO = document.querySelector('.notificacion'); // Cambiar la clase del selector
+const ESTADO_JUEGO = ["", "", "", "", "", "", "", "", ""];
+const COMBINACIONES_GANADORAS = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6]
+];
+const MENSAJE_VICTORIA = () => `El jugador ${jugadorActual} ha ganado!`;
+const MENSAJE_EMPATE = () => `El juego ha terminado en empate!`;
+const TURNO_JUGADOR_ACTUAL = () => `Turno del jugador ${jugadorActual}`;
+const clicSound = new Audio('Click.mp3');
 
 // ==================== VARIABLES ==================== //
-let gameActive = true,
-  currentPlayer = "O"
+let juegoActivo = true;
+let jugadorActual = "O"; // Cambiar si deseas que el juego empiece con "X"
 
-// ==================== FUNCTIONS ==================== //
+// ==================== FUNCIONES ==================== //
 
 function main() {
-  handleStatusDisplay(CURRENT_PLAYER_TURN())
-  listeners()
+  mostrarEstadoJuego(TURNO_JUGADOR_ACTUAL());
+  establecerEventListeners();
 }
 
-function listeners() {
-  document.querySelector('.game-container').addEventListener('click', handleCellClick)
-  document.querySelector('.game-restart').addEventListener('click', handleRestartGame)
+function establecerEventListeners() {
+  document.querySelector('.contenedor-juego').addEventListener('click', manejarClickCelda);
+  document.querySelector('.reiniciar').addEventListener('click', reiniciarJuego); // Cambiar la clase del selector
 }
 
-function handleStatusDisplay(message) {
-  STATUS_DISPLAY.innerHTML = message
+function mostrarEstadoJuego(mensaje) {
+  DISPLAY_ESTADO.innerHTML = mensaje;
 }
 
-function handleRestartGame() {
-  gameActive = true
-  currentPlayer = "X"
-  restartGameState()
-  handleStatusDisplay(CURRENT_PLAYER_TURN())
-  document.querySelectorAll('.game-cell').forEach(cell => cell.innerHTML = "")
+function reiniciarJuego() {
+  juegoActivo = true;
+  jugadorActual = "X"; // Cambiar si deseas que el juego empiece con "O"
+  reiniciarEstadoJuego();
+  mostrarEstadoJuego(TURNO_JUGADOR_ACTUAL());
+  document.querySelectorAll('.celda-juego').forEach(celda => celda.innerHTML = ""); // Cambiar la clase del selector
 }
 
-function handleCellClick(clickedCellEvent /** Type Event **/) {
-  const clickedCell = clickedCellEvent.target
-  if (clickedCell.classList.contains('game-cell')) {
-    const clickedCellIndex = Array.from(clickedCell.parentNode.children).indexOf(clickedCell)
-    if (GAME_STATE[clickedCellIndex] !== '' || !gameActive) {
-      return false
+function manejarClickCelda(evento) {
+  const celdaClickeada = evento.target;
+  if (celdaClickeada.classList.contains('celda-juego')) { // Cambiar la clase del selector
+    const indiceCeldaClickeada = Array.from(celdaClickeada.parentNode.children).indexOf(celdaClickeada);
+    if (ESTADO_JUEGO[indiceCeldaClickeada] !== '' || !juegoActivo) {
+      return false;
     }
 
-    handleCellPlayed(clickedCell, clickedCellIndex)
-    handleResultValidation()
+    marcarCeldaJugada(celdaClickeada, indiceCeldaClickeada);
+    validarResultadoPartida();
+    clicSound.play();
   }
 }
 
-function handleCellPlayed(clickedCell /** object HTML **/, clickedCellIndex) {
-  GAME_STATE[clickedCellIndex] = currentPlayer // Agrega en la posición correspondiente el valor ya sea "X" u "O" en el estado actual del juego
-  clickedCell.innerHTML = currentPlayer // Agrega en el HTML el valor del jugador
+function marcarCeldaJugada(celdaClickeada, indiceCeldaClickeada) {
+  ESTADO_JUEGO[indiceCeldaClickeada] = jugadorActual;
+  celdaClickeada.innerHTML = jugadorActual;
 }
 
-function handleResultValidation() {
-  let roundWon = false
-  for (let i = 0; i < WINNINGS.length; i++) { // Itera cada uno de las posibles combinaciones ganadores
-    const winCondition = WINNINGS[i] // Guarda la combinación por ejemplo: [0, 1, 2]
-    let position1 = GAME_STATE[winCondition[0]],
-      position2 = GAME_STATE[winCondition[1]],
-      position3 = GAME_STATE[winCondition[2]] // Almacena el valor del estado actual del juego según las posiciones de winCondition
+function validarResultadoPartida() {
+  let rondaGanada = false;
+  for (let i = 0; i < COMBINACIONES_GANADORAS.length; i++) {
+    const combinacionGanadora = COMBINACIONES_GANADORAS[i];
+    let posicion1 = ESTADO_JUEGO[combinacionGanadora[0]];
+    let posicion2 = ESTADO_JUEGO[combinacionGanadora[1]];
+    let posicion3 = ESTADO_JUEGO[combinacionGanadora[2]];
 
-    if (position1 === '' || position2 === '' || position3 === '') {
-      continue; // Si hay algún valor vacio nadie ha ganado aún
+    if (posicion1 === '' || posicion2 === '' || posicion3 === '') {
+      continue;
     }
-    if (position1 === position2 && position2 === position3) {
-      roundWon = true // Si todas las posiciones coinciden entonces, dicho jugador ha ganado la partida
-      break
+    if (posicion1 === posicion2 && posicion2 === posicion3) {
+      rondaGanada = true;
+      break;
     }
   }
 
-  if (roundWon) {
-    handleStatusDisplay(WIN_MESSAGE())
-    gameActive = false
-    return
+  if (rondaGanada) {
+    mostrarEstadoJuego(MENSAJE_VICTORIA());
+    juegoActivo = false;
+    return;
   }
 
-  let roundDraw = !GAME_STATE.includes("") // Si todas las celdas tienen valor y la sentencia anterior fue falsa entonces es empate
-  if (roundDraw) {
-    handleStatusDisplay(DRAW_MESSAGE())
-    gameActive = false
-    return
+  let rondaEmpate = !ESTADO_JUEGO.includes("");
+  if (rondaEmpate) {
+    mostrarEstadoJuego(MENSAJE_EMPATE());
+    juegoActivo = false;
+    return;
   }
 
-  handlePlayerChange()
+  cambiarJugadorActual();
 }
 
-function handlePlayerChange() {
-  currentPlayer = currentPlayer === "X" ? "O" : "X"
-  handleStatusDisplay(CURRENT_PLAYER_TURN())
+function cambiarJugadorActual() {
+  jugadorActual = jugadorActual === "X" ? "O" : "X";
+  mostrarEstadoJuego(TURNO_JUGADOR_ACTUAL());
 }
 
-function restartGameState() {
-  let i = GAME_STATE.length
+function reiniciarEstadoJuego() {
+  let i = ESTADO_JUEGO.length;
   while (i--) {
-    GAME_STATE[i] = ''
+    ESTADO_JUEGO[i] = '';
   }
 }
 
-main()
+main();
